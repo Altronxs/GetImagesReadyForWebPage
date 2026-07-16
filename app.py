@@ -2,7 +2,7 @@ import os
 import tkinter as tk
 from tkinter import ttk
 from tkinter import filedialog as fd
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageOps
 from pathlib import Path
 
 # List to hold image paths selected by user
@@ -36,42 +36,40 @@ def get_crop_factor(width, height, size):
             new_crop_factor = new_height / height
          
             return new_crop_factor
-        
 
-def process_image(image_path, mode, crop_factor, crop_mode, resolution):
+def process_image(image_path, mode, crop_factor, crop_mode, resolution, quality):
     if isinstance(image_path, tuple):
         for path in image_path:
             try:
                 img = Image.open(path)
-                
+                new_quality = int(quality) * 10
+
                 # Resize the image based on user's selection
                 if mode == 1:
                     if crop_mode == 1: 
-                        resize_image(path, float(crop_factor) / 100.0)
+                        resize_image(path, float(crop_factor) / 100.0, new_quality)
                     elif crop_mode == 2:
                         width, height = img.size
-                        print(get_crop_factor(width, height, resolution))
-                        resize_image(path, get_crop_factor(width, height, resolution))
+                        resize_image(path, get_crop_factor(width, height, resolution), new_quality)
                 elif mode == 2:
                     print("test")
                     # convert_image(img)
-                else:
-                    process_image(image_path, user_mode, crop_factor)
 
             except IOError:
                 print("Unable to open image. Please check the file path.")
                 pass
 
 
-def resize_image(image_path, crop_factor):
+def resize_image(image_path, crop_factor, quality_factor): 
     with Image.open(image_path) as image:
         width, height = image.size
         new_width = int(width * crop_factor)
         new_height = int(height * crop_factor)
         resized_img = image.resize((new_width, new_height))
+        img_oriented = ImageOps.exif_transpose(resized_img )
         # Add salt to the file name and save the resized image
         new_file_path = add_salt_to_file_name(image_path)
-        resized_img.save(new_file_path)
+        img_oriented.save(new_file_path, optimize=True, quality=quality_factor)
         
 
 
@@ -129,10 +127,11 @@ def update_image_widgets(filename):
                 factor = get_crop_factor(width, height, 100)
                 new_width = int(width * factor)
                 new_height = int(height * factor)
-
+                
                 resized_img = img.resize((new_width, new_height))  # Resize for display
 
-                img_tk = ImageTk.PhotoImage(resized_img)
+                img_tk = ImageOps.exif_transpose(resized_img)
+                img_tk = ImageTk.PhotoImage(img_tk)
 
                 img_label = tk.Label(image_info_frame, image=img_tk)
                 img_label.grid(row=index, column=0, padx=5, pady=5)
@@ -145,7 +144,6 @@ def update_image_widgets(filename):
 
 def on_scale_move(value):
     scale_label.config(text=f"Current Value: {int(float(value))}")
-
 
 def update_crop_mode_label(*args):
     current_crop_mode = crop_mode_val.get()
@@ -167,15 +165,6 @@ def update_crop_mode_label(*args):
         crop_mode_label.config(text="No crop mode selected.")
 
 def get_file_format(file_path):
-    """
-    Returns the file format of an image file.
-
-    Args:
-        file_path (str): The path to the image file.
-
-    Returns:
-        str: The file format of the image.
-    """
     # Create a Path object from the given file path
     file_path_obj = Path(file_path)
     
@@ -226,7 +215,7 @@ scale_frame.grid(row=0, column=2, pady=10, sticky='nsew')
 crop_mode_frame = ttk.Frame(scale_frame, padding="10", borderwidth=0, relief="flat")
 crop_mode_frame.grid(row=0, column=0, sticky='nw')
 
-crop_mode_val = tk.IntVar(value=1)  # Default crop mode is 1 (percentage)
+crop_mode_val = tk.IntVar(value=2)  # Default crop mode is 1 (percentage)
 
 # Crop by label
 crop_mode_label = tk.Label(crop_mode_frame, text="Crop By:", font=('bold', 12))
@@ -261,7 +250,9 @@ resolution_combobox = ttk.Combobox(scale_frame, width=41, textvariable=resolutio
 
 # Adding resolution options to the combobox
 resolution_combobox['values'] = ('2160p', '1440p', '1080p', '720p', '480p', '360p', '240p')
+resolution_combobox.set('1080p')
 resolution_combobox.grid(row=3, column=0, columnspan=1, sticky='nw')
+
 
 # Show the imported images and their respective information
 image_info_frame = ttk.Frame(root, padding="10", relief="solid")
@@ -285,8 +276,22 @@ save_format_combobox['values'] = ('png','jpg')
 save_format_combobox.set('jpg')
 save_format_combobox.grid(row=3, column=0, columnspan=1, sticky='nw')
 
+# Create a new frame for quality settings
+quality_frame = ttk.Frame(save_frame, padding="10", relief="solid")
+quality_frame.grid(row=1, column=0, pady=10, sticky='ns')
 
-ttk.Button(root, text="Run", command=lambda: process_image(image_paths, mode.get(), scale_val.get(), crop_mode_val.get(), resolution_val.get())).grid(row=9, column=0, padx=10, pady=10, sticky='nw')
+# Quality combobox
+quality_label = tk.Label(quality_frame, text="Select Quality:")
+quality_label.grid(row=4, column=0, sticky='nw')
+quality_val = tk.StringVar(value='')
+quality_combobox = ttk.Combobox(quality_frame, textvariable=quality_val)
+
+# Adding quality options to the combobox
+quality_combobox['values'] = ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10')
+quality_combobox.set('10')
+quality_combobox.grid(row=5, column=0, sticky='nw')
+
+ttk.Button(root, text="Run", command=lambda: process_image(image_paths, mode.get(), scale_val.get(), crop_mode_val.get(), resolution_val.get(), quality_val.get())).grid(row=9, column=0, padx=10, pady=10, sticky='nw')
 
 # Dynamically update the crop mode label
 crop_mode_val.trace_add("write", update_crop_mode_label)
