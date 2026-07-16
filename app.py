@@ -12,6 +12,32 @@ tk_images_cache = []
 # List to keep track of visual labels for cleaning up later
 image_widgets = []
 
+
+def get_crop_factor(width, height, size):
+    if width > height:
+        if isinstance(size, str):
+            new_width = int(size.replace("p", ""))
+            new_crop_factor = new_width / width
+           
+            return new_crop_factor
+        else:
+            new_width = int(size)
+            new_crop_factor = new_width / width
+           
+            return new_crop_factor
+    elif height > width:
+        if isinstance(size, str):
+            new_height = int(size.replace("p", ""))
+            new_crop_factor = new_height / height
+           
+            return new_crop_factor
+        else:
+            new_height = int(size)
+            new_crop_factor = new_height / height
+         
+            return new_crop_factor
+        
+
 def process_image(image_path, mode, crop_factor, crop_mode, resolution):
     if isinstance(image_path, tuple):
         for path in image_path:
@@ -24,14 +50,8 @@ def process_image(image_path, mode, crop_factor, crop_mode, resolution):
                         resize_image(path, float(crop_factor) / 100.0)
                     elif crop_mode == 2:
                         width, height = img.size
-                        if width > height:
-                            new_width = int(resolution.replace("p", ""))
-                            new_crop_factor = new_width / width
-                            resize_image(path, new_crop_factor)
-                        elif height > width:
-                            new_height = int(resolution.replace("p", ""))
-                            new_crop_factor = new_height / height
-                            resize_image(path, new_crop_factor)
+                        print(get_crop_factor(width, height, resolution))
+                        resize_image(path, get_crop_factor(width, height, resolution))
                 elif mode == 2:
                     print("test")
                     # convert_image(img)
@@ -87,35 +107,40 @@ def select_image_files():
     
     if filename:
         image_paths = filename
+        update_image_widgets(filename)
 
-        for widget in image_widgets:
-            widget.destroy()  # Remove the widget from the GUI
-        image_widgets.clear()  # Clear the list of image widgets
-        tk_images_cache.clear()  # Clear the cache before adding new images
+def update_image_widgets(filename):
+    # Remove existing widgets and clear caches
+    for widget in image_widgets:
+        widget.destroy()  # Remove the widget from the GUI
+    image_widgets.clear()  # Clear the list of image widgets
+    tk_images_cache.clear()  # Clear the cache before adding new images
 
-        # Update the message label with selected file name(s)
-        if isinstance(filename, tuple):
-            counter = len(filename)
-            message = f"Selected {counter} files"
-            message_label.config(text=message)
-            
-            for index, path in enumerate(filename):
-                try:
-                    img = Image.open(path)
-                    resized_img = img.resize((100, 100))  # Resize for display
+    # Update the message label with selected file name(s)
+    if isinstance(filename, tuple):
+        counter = len(filename)
+        message = f"Selected {counter} files"
+        message_label.config(text=message)
 
-                    img_tk = ImageTk.PhotoImage(resized_img)
+        for index, path in enumerate(filename):
+            try:
+                img = Image.open(path)
+                width, height = img.size
+                factor = get_crop_factor(width, height, 100)
+                new_width = int(width * factor)
+                new_height = int(height * factor)
 
-                    img_label = tk.Label(image_info_frame, image=img_tk)
-                    img_label.grid(row=index, column=0, padx=5, pady=5)
-                    
-                    tk_images_cache.append(img_tk)  # Add the PhotoImage to the cache
-                    image_widgets.append(img_label)  # Keep track of the widget
-                except IOError:
-                    print("Unable to open image. Please check the file path.")
-                    pass
-        else:
-            message_label.config(text=f"Selected file: {os.path.basename(filename)}")
+                resized_img = img.resize((new_width, new_height))  # Resize for display
+
+                img_tk = ImageTk.PhotoImage(resized_img)
+
+                img_label = tk.Label(image_info_frame, image=img_tk)
+                img_label.grid(row=index, column=0, padx=5, pady=5)
+
+                tk_images_cache.append(img_tk)  # Add the PhotoImage to the cache
+                image_widgets.append(img_label)  # Keep track of the widget
+            except IOError:
+                print("Unable to open image. Please check the file path.")
 
 
 def on_scale_move(value):
