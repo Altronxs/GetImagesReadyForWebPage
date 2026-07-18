@@ -1,52 +1,76 @@
-Image Processor GUI
-This script is designed as a graphical user interface (GUI) tool that allows users to select multiple image files, resize or crop them based on specified parameters, and save the processed images with different formats and qualities.
+# Image Processor GUI
 
-Features
-Image Selection: Users can select one or more image files using a file picker dialog.
-Image Display: The selected images are displayed in a grid format within the GUI for visual inspection.
-Resize/Crop Options:
-Resize: Resizes the images based on user-specified percentage or resolution.
-Crop: Crops the images by either percentage or resolution, depending on the selected mode.
-Image Processing: The script processes the selected images according to the chosen parameters and saves them with a new file name that includes a salted suffix for uniqueness.
-Usage
-Step-by-Step Guide
-Run the Script:
+A Tkinter desktop app for batch-resizing images. Select multiple files, preview
+them in a scrollable grid, choose how you want them scaled, and save the
+results with a new filename and your choice of format/quality.
 
-Open your terminal or command prompt.
-Navigate to the directory where you saved this script.
-Run the script using Python: python image_processor.py.
-Select Image Files:
+## Features
 
-The GUI will open with a file picker dialog. Click on "Browse File" to select one or more image files (supported formats are .jpg, .jpeg, .png, .bmp, and .gif).
-View Selected Images:
+- **Multi-file selection** — pick one or more images at once via a native file
+  picker (`.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`).
+- **Thumbnail preview** — selected images are listed in a scrollable panel so
+  you can confirm what you picked before processing.
+- **Two ways to scale:**
+  - **Percentage** — scale every image by a percentage (12–100%) using a
+    slider.
+  - **Resolution** — scale each image so its longer side matches a target
+    resolution (2160p, 1440p, 1080p, 720p, 480p, 360p, or 240p), preserving
+    aspect ratio.
+- **EXIF-aware** — orientation data is reapplied after resizing so photos
+  don't come out rotated or mirrored.
+- **Output format & quality** — save as PNG or JPG, with a quality slider
+  from 1 (lowest) to 10 (highest).
+- **Non-destructive output** — processed files are saved next to the
+  originals with a `-resized` suffix, so source images are never overwritten.
 
-Once you've selected the images, they will be displayed in a grid format within the GUI.
-Set Processing Parameters:
+> **Note:** A "Convert" mode exists in the UI but is not yet implemented —
+> selecting it currently does nothing.
 
-Choose between "Resize" or "Convert" modes.
-Select the crop mode (percentage or resolution).
-Set the crop factor and resolution if applicable.
-Choose the desired image format from the combobox (png or jpg).
-Run the Process:
+## Requirements
 
-Click on the "Run" button to process the selected images according to your specified parameters.
-Save Processed Images:
+- Python 3
+- [Pillow](https://pypi.org/project/Pillow/) (`pip install Pillow`)
+- Tkinter (usually bundled with Python; on Linux you may need to install it
+  separately, e.g. `sudo apt install python3-tk`)
 
-The processed images will be saved with a new file name that includes a salted suffix, ensuring uniqueness.
-The script will display the path of each saved image in the console.
-Parameters
-Mode: Choose between "Resize" or "Convert".
+## Usage
 
-Resize: Resize the images based on user-specified percentage or resolution.
-Convert: Convert the images to a different format (not implemented yet).
-Crop Mode:
+1. **Run the app:**
+   ```bash
+   python app.py
+   ```
+2. **Select images:** Click **Browse File** and choose one or more images.
+   Your selections appear as thumbnails in the panel below.
+3. **Choose a mode:** Select **Resize** (currently the only working mode).
+4. **Choose how to scale:**
+   - **Percentage** — drag the slider to set the scale factor (12–100%).
+   - **Resolution** — pick a target resolution from the dropdown; the image's
+     longer side will be scaled to match it.
+5. **Set the output format and quality:** Choose **png** or **jpg**, and pick
+   a quality level from 1–10.
+6. **Click Run.** Each image is processed and saved in its original folder
+   as `<original-name>-resized.<format>`. The saved path for each file is
+   printed to the console.
 
-Percentage: Crop by percentage of the image size.
-Resolution: Crop by a specific resolution.
-Crop Factor/Resolution: Set the crop factor as a percentage or specify the desired resolution in pixels.
+## Parameters
 
-Image Format: Choose between png and jpg.
+| Parameter | Options | Notes |
+|---|---|---|
+| Mode | Resize, Convert | Convert is not implemented yet |
+| Scale by | Percentage, Resolution | Determines which control (slider or dropdown) sets the scale factor |
+| Percentage | 12–100% | Used when "Scale by" is set to Percentage |
+| Resolution | 2160p, 1440p, 1080p, 720p, 480p, 360p, 240p | Scales the image's longer side to this length |
+| Format | png, jpg | Applied to the output file extension |
+| Quality | 1–10 | Scaled internally to a 10–100 save quality |
 
-Contributing
-Contributions are welcome! If you find any bugs or have suggestions for improvements, please open an issue on GitHub. You can also submit a pull request with your changes.
+## Known Limitations
 
+- Convert mode is a placeholder and does not currently convert file formats.
+- If an image can't be opened (e.g. a corrupted or unsupported file), it's
+  skipped with a message printed to the console rather than shown in the UI.
+
+## Contributing
+
+Contributions are welcome! If you find any bugs or have suggestions for
+improvements, please open an issue on GitHub. You can also submit a pull
+request with your changes.
