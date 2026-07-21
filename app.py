@@ -4,6 +4,32 @@ from tkinter import ttk
 from tkinter import filedialog as fd
 from PIL import Image, ImageTk, ImageOps
 from pathlib import Path
+from pillow_heif import register_heif_opener
+
+# ---------------------------------------------------------------------------
+# HEIC/HEIF support
+# ---------------------------------------------------------------------------
+# pillow-heif patches Pillow so Image.open() understands .heic/.heif files
+# transparently. This needs to run once, before any Image.open() call, and
+# is safe to call multiple times.
+def enable_heif_support():
+    register_heif_opener()
+
+
+def open_image_file(path):
+    """
+    Central place to open an image file, HEIC/HEIF included.
+
+    Every place in this app that needs to load a file from disk (thumbnail
+    preview, resizing, and eventually format conversion) should go through
+    this function rather than calling Image.open() directly, so HEIC/HEIF
+    support stays in one spot. Reuse this in the "Convert" mode
+    implementation as well.
+    """
+    return Image.open(path)
+
+
+enable_heif_support()
 
 # ---------------------------------------------------------------------------
 # Global state
@@ -83,7 +109,7 @@ def process_image(image_path, mode, crop_factor, crop_mode, resolution, quality)
     if isinstance(image_path, tuple):
         for path in image_path:
             try:
-                img = Image.open(path)
+                img = open_image_file(path)
                 # Quality combobox is 1-10; scale to a more typical
                 # JPEG/PIL "quality" range of 10-100.
                 new_quality = int(quality) * 10
@@ -114,7 +140,7 @@ def resize_image(image_path, crop_factor, quality_factor):
     orientation using the EXIF data, and save it alongside the original
     with a "-resized" suffix (see add_salt_to_file_name).
     """
-    with Image.open(image_path) as image:
+    with open_image_file(image_path) as image:
         width, height = image.size
         new_width = int(width * crop_factor)
         new_height = int(height * crop_factor)
@@ -162,7 +188,7 @@ def select_image_files():
 
     # Define allowed file extensions
     filetypes = (
-        ('Image files', '*.jpg *.jpeg *.png *.bmp *.gif'),
+        ('Image files', '*.jpg *.jpeg *.png *.bmp *.gif *.heic *.heif'),
         ('All files', '*.*')
     )
 
@@ -197,7 +223,7 @@ def update_image_widgets(filename):
 
         for index, path in enumerate(filename):
             try:
-                img = Image.open(path)
+                img = open_image_file(path)
                 width, height = img.size
                 # Scale each thumbnail down so its longer side is ~200px.
                 factor = get_crop_factor(width, height, 200)
@@ -418,3 +444,4 @@ crop_mode_val.trace_add("write", update_crop_mode_label)
 update_crop_mode_label()
 
 root.mainloop()
+

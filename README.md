@@ -7,7 +7,7 @@ results with a new filename and your choice of format/quality.
 ## Features
 
 - **Multi-file selection** — pick one or more images at once via a native file
-  picker (`.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`).
+  picker (`.jpg`, `.jpeg`, `.png`, `.bmp`, `.gif`, `.heic`, `.heif`).
 - **Thumbnail preview** — selected images are listed in a scrollable panel so
   you can confirm what you picked before processing.
 - **Two ways to scale:**
@@ -30,6 +30,8 @@ results with a new filename and your choice of format/quality.
 
 - Python 3
 - [Pillow](https://pypi.org/project/Pillow/) (`pip install Pillow`)
+- [pillow-heif](https://pypi.org/project/pillow-heif/) (`pip install pillow-heif`)
+  — enables opening `.heic`/`.heif` files
 - Tkinter (usually bundled with Python; on Linux you may need to install it
   separately, e.g. `sudo apt install python3-tk`)
 
